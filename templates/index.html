@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keezer Controller</title>
+<script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body { font-family: -apple-system, sans-serif; background: #1a1a2e; color: #eee;
+    padding: 12px 20px; display: flex; flex-direction: column; height: 100vh; }
+  .header { text-align: center; margin-bottom: 8px; }
+  .header h1 { font-size: 1.4em; color: #e2b714; }
+  .top-row { display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+  .card { background: #16213e; border-radius: 10px; padding: 8px 20px; text-align: center; min-width: 120px; }
+  .card .label { font-size: 0.7em; color: #888; margin-bottom: 2px; }
+  .card .value { font-size: 1.6em; font-weight: bold; }
+  .temp-value { color: #4fc3f7; }
+  .room-value { color: #ffb74d; }
+  .compressor-on { color: #66bb6a; }
+  .compressor-off { color: #ef5350; }
+  .state-idle { color: #888; }
+  .state-cooling { color: #66bb6a; }
+  .state-wait_cool { color: #ffa726; }
+  .state-min_cool { color: #ab47bc; }
+  .target-control { display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .target-control button { background: #e2b714; color: #1a1a2e; border: none; border-radius: 8px;
+    font-size: 1.1em; width: 34px; height: 34px; cursor: pointer; font-weight: bold; }
+  .target-control button:hover { background: #f0c830; }
+  .target-control .target-display { font-size: 1.2em; min-width: 60px; text-align: center; }
+  .mode-toggle { display: flex; align-items: center; gap: 6px; }
+  .mode-toggle button { padding: 5px 14px; border: 2px solid #444; border-radius: 8px;
+    background: transparent; color: #888; cursor: pointer; font-size: 0.85em; }
+  .mode-toggle button.active { border-color: #4fc3f7; color: #4fc3f7; background: rgba(79,195,247,0.1); }
+  .mode-toggle button.active-off { border-color: #ef5350; color: #ef5350; background: rgba(239,83,80,0.1); }
+  .charts { flex: 1; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+  .chart { background: #16213e; border-radius: 10px; padding: 8px; flex: 1; min-height: 0; }
+</style>
+</head>
+<body>
+<div class="header"><h1>🍺 Keezer Controller</h1></div>
+
+<div class="top-row">
+  <div class="card">
+    <div class="label">Keezer Temp</div>
+    <div class="value temp-value" id="current-temp">--°F</div>
+  </div>
+  <div class="card">
+    <div class="label">Room Temp</div>
+    <div class="value room-value" id="room-temp">--°F</div>
+  </div>
+  <div class="card">
+    <div class="label">State</div>
+    <div class="value" id="comp-state">--</div>
+  </div>
+  <div class="target-control">
+    <button onclick="adjustTarget(-0.5)" aria-label="Decrease target temperature">−</button>
+    <div class="target-display" id="target-temp">--°F</div>
+    <button onclick="adjustTarget(0.5)" aria-label="Increase target temperature">+</button>
+  </div>
+  <div class="mode-toggle">
+    <button id="mode-cool" onclick="setMode('cool')">Cool</button>
+    <button id="mode-off" onclick="setMode('off')">Off</button>
+  </div>
+</div>
+
+<div class="charts">
+<div class="chart" id="temp-chart"></div>
+<div class="chart" id="state-chart"></div>
+</div>
+
+<script>
+let currentTarget = 36;
+const stateLabels = {idle: 'Idle', cooling: 'Cooling', wait_cool: 'Waiting', min_cool: 'Min Run'};
+const stateColors = {idle: '#888', cooling: '#66bb6a', wait_cool: '#ffa726', min_cool: '#ab47bc'};
+
+async function fetchStatus() {
+  const res = await fetch('/api/status');
+  const d = await res.json();
+  document.getElementById('current-temp').textContent = d.current_f !== null ? d.current_f + '°F' : '--°F';
+  document.getElementById('room-temp').textContent = d.room_f !== null ? d.room_f + '°F' : '--°F';
+  const cs = document.getElementById('comp-state');
+  cs.textContent = stateLabels[d.comp_state] || d.comp_state;
+  cs.className = 'value state-' + d.comp_state;
+  currentTarget = d.target_f;
+  document.getElementById('target-temp').textContent = d.target_f + '°F';
+  document.getElementById('mode-cool').className = d.mode === 'cool' ? 'active' : '';
+  document.getElementById('mode-off').className = d.mode === 'off' ? 'active-off' : '';
+}
+
+async function adjustTarget(delta) {
+  currentTarget = Math.round((currentTarget + delta) * 10) / 10;
+  document.getElementById('target-temp').textContent = currentTarget + '°F';
+  await fetch('/api/target', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({target_f: currentTarget})
+  });
+}
+
+async function setMode(mode) {
+  await fetch('/api/mode', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({mode})
+  });
+  fetchStatus();
+}
+
+async function fetchHistory() {
+  const res = await fetch('/api/history');
+  const d = await res.json();
+  if (!d.temps.length) return;
+  const times = d.timestamps.map(t => new Date(t));
+  const validTemps = d.temps.filter(t => t !== null);
+  const tMin = Math.floor(Math.min(...validTemps)) - 2;
+  const tMax = Math.ceil(Math.max(...validTemps)) + 2;
+
+  const traces = [{
+    x: times, y: d.temps, type: 'scatter', mode: 'lines',
+    line: {color: '#4fc3f7', width: 2}, name: 'Keezer'
+  }];
+  if (d.room_temps.some(t => t !== null)) {
+    traces.push({
+      x: times, y: d.room_temps, type: 'scatter', mode: 'lines',
+      line: {color: '#ffb74d', width: 1.5, dash: 'dot'}, name: 'Room'
+    });
+  }
+
+  Plotly.newPlot('temp-chart', traces, {
+    title: {text: 'Temperature', font: {color: '#eee', size: 14}},
+    paper_bgcolor: '#16213e', plot_bgcolor: '#0f1a2e',
+    xaxis: {color: '#aaa', gridcolor: '#2a2a4a', tickformat: '%b %d %H:%M'},
+    yaxis: {color: '#aaa', gridcolor: '#2a2a4a', title: '°F', range: [tMin, tMax], dtick: 2},
+    legend: {font: {color: '#aaa'}, x: 0, y: 1.15, orientation: 'h'},
+    margin: {t: 30, r: 16, b: 30, l: 44}
+  }, {responsive: true});
+
+  // State chart — colored bars for each state
+  const barColors = d.states.map(s => stateColors[s] || '#888');
+  Plotly.newPlot('state-chart', [{
+    x: times, y: d.states.map(() => 1), type: 'bar',
+    marker: {color: barColors, line: {width: 0}},
+    hovertext: d.states.map((s, i) => (stateLabels[s] || s) + ' — ' + times[i].toLocaleTimeString()),
+    hoverinfo: 'text'
+  }], {
+    title: {text: 'Compressor State', font: {color: '#eee', size: 14}},
+    paper_bgcolor: '#16213e', plot_bgcolor: '#0f1a2e',
+    xaxis: {color: '#aaa', gridcolor: '#2a2a4a', tickformat: '%b %d %H:%M'},
+    yaxis: {visible: false, range: [0, 1.2]},
+    bargap: 0, margin: {t: 30, r: 16, b: 30, l: 44},
+    showlegend: false
+  }, {responsive: true});
+}
+
+fetchStatus();
+fetchHistory();
+setInterval(fetchStatus, 5000);
+setInterval(fetchHistory, 60000);
+</script>
+</body>
+</html>
