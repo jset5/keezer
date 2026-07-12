@@ -3,5 +3,7 @@
   "upper_f": 38.0,
   "lower_f": 34.0,
   "mode": "cool",
-  "kasa_ip": "192.168.4.89"
+  "kasa_ip": "192.168.4.89",
+  "ntfy_topic": "keezer-858bf1ed659a",
+  "alerts_enabled": true
 }

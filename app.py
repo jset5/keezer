@@ -282,6 +282,85 @@ def set_compressor(on):
     else:
         state["last_compressor_off"] = time.time()
 
+# --- Alerts (ntfy.sh) ---
+NTFY_TOPIC = cfg.get("ntfy_topic", "keezer-858bf1ed659a")
+NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
+ALERT_COOLDOWN = 600  # Don't re-alert for 10 minutes
+ALERT_THRESHOLD_HIGH = 5.0  # Alert if temp exceeds upper limit by this much
+ALERT_THRESHOLD_LOW = 5.0   # Alert if temp drops below lower limit by this much
+
+alert_state = {
+    "last_alert_time": 0,
+    "alert_active": False,
+    "alerts_enabled": cfg.get("alerts_enabled", True),
+}
+
+def send_alert(title, message, priority="high", tags="warning"):
+    """Send a push notification via ntfy.sh."""
+    import urllib.request
+    try:
+        req = urllib.request.Request(NTFY_URL, data=message.encode())
+        req.add_header("Title", title)
+        req.add_header("Priority", priority)
+        req.add_header("Tags", tags)
+        urllib.request.urlopen(req, timeout=10)
+        print(f"[alert] Sent: {title} - {message}")
+    except Exception as e:
+        print(f"[alert] Failed to send: {e}")
+
+def check_alerts(beer_t):
+    """Check if temperature is out of range and send alerts."""
+    if not alert_state["alerts_enabled"]:
+        return
+
+    now = time.time()
+    upper = state["upper_f"]
+    lower = state["lower_f"]
+    high_limit = upper + ALERT_THRESHOLD_HIGH
+    low_limit = lower - ALERT_THRESHOLD_LOW
+
+    # Check if temp is critically out of range
+    if beer_t > high_limit:
+        if now - alert_state["last_alert_time"] > ALERT_COOLDOWN:
+            send_alert(
+                "🚨 Keezer TOO WARM",
+                f"Temperature is {beer_t}°F (limit: {upper}°F). "
+                f"Check if compressor/plug is working!",
+                priority="urgent", tags="fire"
+            )
+            alert_state["last_alert_time"] = now
+            alert_state["alert_active"] = True
+    elif beer_t < low_limit:
+        if now - alert_state["last_alert_time"] > ALERT_COOLDOWN:
+            send_alert(
+                "🥶 Keezer TOO COLD",
+                f"Temperature is {beer_t}°F (limit: {lower}°F). "
+                f"Beer may be freezing!",
+                priority="high", tags="cold_face"
+            )
+            alert_state["last_alert_time"] = now
+            alert_state["alert_active"] = True
+    elif alert_state["alert_active"]:
+        # Temp is back in range — send recovery notification
+        if beer_t >= lower and beer_t <= upper:
+            send_alert(
+                "✅ Keezer Back to Normal",
+                f"Temperature is {beer_t}°F (target: {state['target_f']}°F)",
+                priority="default", tags="white_check_mark"
+            )
+            alert_state["alert_active"] = False
+
+    # Also alert if plug is unreachable for too long
+    if not state.get("plug_reachable", True) and state["kasa_ip"]:
+        if now - alert_state.get("last_plug_alert", 0) > ALERT_COOLDOWN:
+            send_alert(
+                "⚠️ Keezer Plug Unreachable",
+                f"Cannot reach Kasa plug at {state['kasa_ip']}. "
+                f"Auto-discovery running...",
+                priority="high", tags="electric_plug"
+            )
+            alert_state["last_plug_alert"] = now
+
 # --- Control Loop ---
 def control_loop():
     init_db()
@@ -341,6 +420,9 @@ def control_loop():
                             state["comp_state"] = "wait_cool"
                     else:
                         state["comp_state"] = "idle"
+
+            # Check alerts
+            check_alerts(beer_t)
 
             log_reading(beer_t, room_t, state["compressor_on"],
                         state["comp_state"], watts)
@@ -467,6 +549,29 @@ def api_history():
         "states": [r[4] for r in rows],
         "watts": [r[5] for r in rows],
     })
+
+@app.route("/api/alerts", methods=["GET", "POST"])
+def api_alerts():
+    if request.method == "POST":
+        data = request.get_json()
+        if "enabled" in data:
+            alert_state["alerts_enabled"] = bool(data["enabled"])
+            save_config({"alerts_enabled": alert_state["alerts_enabled"]})
+        return jsonify({"alerts_enabled": alert_state["alerts_enabled"]})
+    return jsonify({
+        "alerts_enabled": alert_state["alerts_enabled"],
+        "alert_active": alert_state["alert_active"],
+        "ntfy_topic": NTFY_TOPIC,
+    })
+
+@app.route("/api/alerts/test", methods=["POST"])
+def api_alerts_test():
+    send_alert(
+        "🍺 Keezer Test Alert",
+        f"This is a test! Current temp: {state['current_f']}°F",
+        priority="default", tags="beer"
+    )
+    return jsonify({"sent": True})
 
 if __name__ == "__main__":
     threading.Thread(target=control_loop, daemon=True).start()
