@@ -8,34 +8,53 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; }
-  body { font-family: -apple-system, sans-serif; background: #1a1a2e; color: #eee;
+  body { font-family: -apple-system, sans-serif; background: #f0f2f5; color: #1b2a4a;
     padding: 12px 20px; display: flex; flex-direction: column; height: 100vh; }
-  .header { text-align: center; margin-bottom: 8px; }
-  .header h1 { font-size: 1.4em; color: #e2b714; }
-  .top-row { display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
-  .card { background: #16213e; border-radius: 10px; padding: 8px 20px; text-align: center; min-width: 120px; }
-  .card .label { font-size: 0.7em; color: #888; margin-bottom: 2px; }
-  .card .value { font-size: 1.6em; font-weight: bold; }
-  .temp-value { color: #4fc3f7; }
-  .room-value { color: #ffb74d; }
-  .compressor-on { color: #66bb6a; }
-  .compressor-off { color: #ef5350; }
+  .header { text-align: center; margin-bottom: 6px; }
+  .header h1 { font-size: 1.4em; color: #1b2a4a; }
+  .top-row { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+  .card { background: #fff; border: 2px solid #1b2a4a; border-radius: 10px; padding: 6px 16px; text-align: center; min-width: 100px; }
+  .card .label { font-size: 0.65em; color: #667; margin-bottom: 1px; }
+  .card .value { font-size: 1.4em; font-weight: bold; }
+  .temp-value { color: #1b2a4a; }
+  .room-value { color: #c67700; }
   .state-idle { color: #888; }
-  .state-cooling { color: #66bb6a; }
-  .state-wait_cool { color: #ffa726; }
-  .state-min_cool { color: #ab47bc; }
-  .target-control { display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .target-control button { background: #e2b714; color: #1a1a2e; border: none; border-radius: 8px;
-    font-size: 1.1em; width: 34px; height: 34px; cursor: pointer; font-weight: bold; }
-  .target-control button:hover { background: #f0c830; }
-  .target-control .target-display { font-size: 1.2em; min-width: 60px; text-align: center; }
-  .mode-toggle { display: flex; align-items: center; gap: 6px; }
-  .mode-toggle button { padding: 5px 14px; border: 2px solid #444; border-radius: 8px;
-    background: transparent; color: #888; cursor: pointer; font-size: 0.85em; }
-  .mode-toggle button.active { border-color: #4fc3f7; color: #4fc3f7; background: rgba(79,195,247,0.1); }
-  .mode-toggle button.active-off { border-color: #ef5350; color: #ef5350; background: rgba(239,83,80,0.1); }
-  .charts { flex: 1; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
-  .chart { background: #16213e; border-radius: 10px; padding: 8px; flex: 1; min-height: 0; }
+  .state-cooling { color: #2e7d32; }
+  .state-wait_cool { color: #e65100; }
+  .state-min_cool { color: #7b1fa2; }
+  .watts-value { color: #0277bd; }
+  .kwh-value { color: #00695c; }
+  .target-control { display: flex; align-items: center; gap: 6px; }
+  .target-control button { background: #1b2a4a; color: #fff; border: none; border-radius: 8px;
+    font-size: 1em; width: 32px; height: 32px; cursor: pointer; font-weight: bold; }
+  .target-control button:hover { background: #2c3e6a; }
+  .target-control .target-display { font-size: 1.1em; min-width: 55px; text-align: center; cursor: pointer; text-decoration: underline dotted; }
+  .mode-toggle { display: flex; align-items: center; gap: 5px; }
+  .mode-toggle button { padding: 4px 12px; border: 2px solid #bbb; border-radius: 8px;
+    background: transparent; color: #888; cursor: pointer; font-size: 0.8em; }
+  .mode-toggle button.active { border-color: #1b2a4a; color: #1b2a4a; background: rgba(27,42,74,0.1); }
+  .mode-toggle button.active-off { border-color: #c62828; color: #c62828; background: rgba(198,40,40,0.1); }
+  .kasa-status { font-size: 0.7em; color: #888; cursor: pointer; text-decoration: underline; }
+  .network-status { display: flex; justify-content: center; gap: 16px; margin-bottom: 6px; padding: 4px 0; }
+  .net-item { font-size: 0.75em; color: #555; padding: 3px 10px; background: #f8f9fb; border-radius: 6px; border: 1px solid #ddd; }
+  .net-item.reachable { border-color: #2e7d32; color: #2e7d32; }
+  .net-item.unreachable { border-color: #c62828; color: #c62828; }
+  .net-item[onclick] { cursor: pointer; text-decoration: underline dotted; }
+  .charts { flex: 1; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
+  .chart { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 6px; flex: 1; min-height: 0; }
+  .chart.small { flex: 0.6; }
+  dialog { border: 2px solid #1b2a4a; border-radius: 12px; padding: 20px; max-width: 400px; }
+  dialog::backdrop { background: rgba(0,0,0,0.4); }
+  dialog h3 { margin-bottom: 10px; }
+  dialog .dev-list { list-style: none; padding: 0; }
+  dialog .dev-list li { padding: 8px; cursor: pointer; border-radius: 6px; margin-bottom: 4px; background: #f0f2f5; }
+  dialog .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  dialog .row label { font-size: 0.9em; }
+  dialog .row .adj { display: flex; align-items: center; gap: 6px; }
+  dialog .row .adj button { background: #1b2a4a; color: #fff; border: none; border-radius: 6px;
+    width: 30px; height: 30px; cursor: pointer; font-weight: bold; font-size: 1em; }
+  dialog .row .adj span { min-width: 50px; text-align: center; font-weight: bold; }
+  dialog button { margin-top: 10px; padding: 6px 16px; border: 1px solid #888; border-radius: 6px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -43,59 +62,173 @@
 
 <div class="top-row">
   <div class="card">
-    <div class="label">Keezer Temp</div>
+    <div class="label">Keezer</div>
     <div class="value temp-value" id="current-temp">--°F</div>
+    <div class="label" style="margin-top:2px">Avg</div>
+    <div class="value temp-value" style="font-size:1em" id="avg-temp">--°F</div>
   </div>
   <div class="card">
-    <div class="label">Room Temp</div>
+    <div class="label">Room</div>
     <div class="value room-value" id="room-temp">--°F</div>
+    <div class="label" style="margin-top:2px">Avg</div>
+    <div class="value room-value" style="font-size:1em" id="avg-room">--°F</div>
   </div>
   <div class="card">
     <div class="label">State</div>
     <div class="value" id="comp-state">--</div>
+    <div class="label" style="margin-top:2px">Avg Run</div>
+    <div class="value" style="font-size:1em;color:#555" id="avg-run">--</div>
+  </div>
+  <div class="card">
+    <div class="label">Today</div>
+    <div class="value kwh-value" id="kwh">--</div>
+    <div class="label" style="margin-top:2px">Daily Avg</div>
+    <div class="value kwh-value" id="avg-kwh">--</div>
   </div>
   <div class="target-control">
-    <button onclick="adjustTarget(-0.5)" aria-label="Decrease target temperature">−</button>
-    <div class="target-display" id="target-temp">--°F</div>
-    <button onclick="adjustTarget(0.5)" aria-label="Increase target temperature">+</button>
+    <button onclick="adjustLimit('target_f',-0.5)" aria-label="Decrease target">−</button>
+    <div class="target-display" id="target-temp" onclick="openLimitsDialog()">--°F</div>
+    <button onclick="adjustLimit('target_f',0.5)" aria-label="Increase target">+</button>
   </div>
   <div class="mode-toggle">
     <button id="mode-cool" onclick="setMode('cool')">Cool</button>
     <button id="mode-off" onclick="setMode('off')">Off</button>
   </div>
+  <span class="kasa-status" id="kasa-status" onclick="openKasaDialog()">⚡ Plug: --</span>
+</div>
+
+<div class="network-status" id="network-status">
+  <span class="net-item" id="net-pi">🖥 Pi: --</span>
+  <span class="net-item" id="net-plug" onclick="openKasaDialog()">🔌 Plug: --</span>
 </div>
 
 <div class="charts">
 <div class="chart" id="temp-chart"></div>
-<div class="chart" id="state-chart"></div>
+<div class="chart" id="power-chart"></div>
 </div>
 
+<dialog id="limits-dialog">
+  <h3>Temperature Limits</h3>
+  <div class="row">
+    <label><input type="checkbox" id="dlg-auto" onchange="toggleAutoLimits()" checked> Auto (±offset from target)</label>
+  </div>
+  <div class="row" id="offset-row"><label>Offset</label><div class="adj">
+    <button onclick="adjustOffset(-0.5)">−</button>
+    <span id="dlg-offset">2.0°F</span>
+    <button onclick="adjustOffset(0.5)">+</button>
+  </div></div>
+  <div class="row"><label>Upper (compressor on)</label><div class="adj">
+    <button id="btn-upper-dn" onclick="adjustLimit('upper_f',-0.5)">−</button>
+    <span id="dlg-upper">--°F</span>
+    <button id="btn-upper-up" onclick="adjustLimit('upper_f',0.5)">+</button>
+  </div></div>
+  <div class="row"><label>Target</label><div class="adj">
+    <button onclick="adjustLimit('target_f',-0.5)">−</button>
+    <span id="dlg-target">--°F</span>
+    <button onclick="adjustLimit('target_f',0.5)">+</button>
+  </div></div>
+  <div class="row"><label>Lower (compressor off)</label><div class="adj">
+    <button id="btn-lower-dn" onclick="adjustLimit('lower_f',-0.5)">−</button>
+    <span id="dlg-lower">--°F</span>
+    <button id="btn-lower-up" onclick="adjustLimit('lower_f',0.5)">+</button>
+  </div></div>
+  <button onclick="document.getElementById('limits-dialog').close()">Done</button>
+</dialog>
+
+<dialog id="kasa-dialog">
+  <h3>Smart Plug Setup</h3>
+  <p id="kasa-msg">Scanning network...</p>
+  <ul class="dev-list" id="kasa-devices"></ul>
+  <button onclick="document.getElementById('kasa-dialog').close()">Close</button>
+</dialog>
+
 <script>
-let currentTarget = 36;
+let limits = {target_f: 36, upper_f: 38, lower_f: 34};
+let autoLimits = true;
+let offset = 2.0;
 const stateLabels = {idle: 'Idle', cooling: 'Cooling', wait_cool: 'Waiting', min_cool: 'Min Run'};
-const stateColors = {idle: '#888', cooling: '#66bb6a', wait_cool: '#ffa726', min_cool: '#ab47bc'};
+const stateColors = {idle: '#ccc', cooling: '#2e7d32', wait_cool: '#e65100', min_cool: '#7b1fa2'};
 
 async function fetchStatus() {
   const res = await fetch('/api/status');
   const d = await res.json();
   document.getElementById('current-temp').textContent = d.current_f !== null ? d.current_f + '°F' : '--°F';
   document.getElementById('room-temp').textContent = d.room_f !== null ? d.room_f + '°F' : '--°F';
+  document.getElementById('avg-temp').textContent = d.avg_temp !== null ? d.avg_temp + '°F' : '--';
+  document.getElementById('avg-room').textContent = d.avg_room !== null ? d.avg_room + '°F' : '--';
   const cs = document.getElementById('comp-state');
   cs.textContent = stateLabels[d.comp_state] || d.comp_state;
   cs.className = 'value state-' + d.comp_state;
+  document.getElementById('avg-run').textContent = d.avg_run_min !== null ? d.avg_run_min + ' min' : '--';
+  document.getElementById('kwh').textContent = d.kwh_today ? d.kwh_today + ' kWh / $' + (d.kwh_today * 0.21).toFixed(2) : '0 kWh / $0.00';
+  document.getElementById('avg-kwh').textContent = d.avg_kwh ? d.avg_kwh + ' kWh / $' + (d.avg_kwh * 0.21).toFixed(2) : '--';
   currentTarget = d.target_f;
-  document.getElementById('target-temp').textContent = d.target_f + '°F';
+  limits = {target_f: d.target_f, upper_f: d.upper_f, lower_f: d.lower_f};
+  offset = Math.round((d.upper_f - d.target_f) * 10) / 10;
+  updateLimitDisplay();
   document.getElementById('mode-cool').className = d.mode === 'cool' ? 'active' : '';
   document.getElementById('mode-off').className = d.mode === 'off' ? 'active-off' : '';
+
+  // Network status
+  const piEl = document.getElementById('net-pi');
+  const plugEl = document.getElementById('net-plug');
+  piEl.textContent = '✅ Pi: ' + (d.pi_ip || '--');
+  piEl.className = 'net-item reachable';
+  if (d.kasa_ip) {
+    const icon = d.plug_reachable ? '✅' : '❌';
+    plugEl.textContent = icon + ' Plug: ' + d.kasa_ip;
+    plugEl.className = 'net-item ' + (d.plug_reachable ? 'reachable' : 'unreachable');
+  } else {
+    plugEl.textContent = '⚠️ Plug: not configured';
+    plugEl.className = 'net-item unreachable';
+  }
 }
 
-async function adjustTarget(delta) {
-  currentTarget = Math.round((currentTarget + delta) * 10) / 10;
-  document.getElementById('target-temp').textContent = currentTarget + '°F';
+async function adjustLimit(key, delta) {
+  limits[key] = Math.round((limits[key] + delta) * 10) / 10;
+  if (autoLimits && key === 'target_f') {
+    limits.upper_f = Math.round((limits.target_f + offset) * 10) / 10;
+    limits.lower_f = Math.round((limits.target_f - offset) * 10) / 10;
+  }
+  updateLimitDisplay();
   await fetch('/api/target', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({target_f: currentTarget})
+    body: JSON.stringify(limits)
   });
+}
+
+async function adjustOffset(delta) {
+  offset = Math.round((offset + delta) * 10) / 10;
+  if (offset < 0.5) offset = 0.5;
+  limits.upper_f = Math.round((limits.target_f + offset) * 10) / 10;
+  limits.lower_f = Math.round((limits.target_f - offset) * 10) / 10;
+  updateLimitDisplay();
+  await fetch('/api/target', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(limits)
+  });
+}
+
+function toggleAutoLimits() {
+  autoLimits = document.getElementById('dlg-auto').checked;
+  document.getElementById('offset-row').style.display = autoLimits ? '' : 'none';
+  document.getElementById('btn-upper-dn').disabled = autoLimits;
+  document.getElementById('btn-upper-up').disabled = autoLimits;
+  document.getElementById('btn-lower-dn').disabled = autoLimits;
+  document.getElementById('btn-lower-up').disabled = autoLimits;
+}
+
+function updateLimitDisplay() {
+  document.getElementById('target-temp').textContent = limits.target_f + '°F';
+  document.getElementById('dlg-upper').textContent = limits.upper_f + '°F';
+  document.getElementById('dlg-target').textContent = limits.target_f + '°F';
+  document.getElementById('dlg-lower').textContent = limits.lower_f + '°F';
+  document.getElementById('dlg-offset').textContent = offset + '°F';
+}
+
+function openLimitsDialog() {
+  toggleAutoLimits();
+  document.getElementById('limits-dialog').showModal();
 }
 
 async function setMode(mode) {
@@ -106,50 +239,86 @@ async function setMode(mode) {
   fetchStatus();
 }
 
+async function openKasaDialog() {
+  const dlg = document.getElementById('kasa-dialog');
+  document.getElementById('kasa-msg').textContent = 'Scanning network...';
+  document.getElementById('kasa-devices').innerHTML = '';
+  dlg.showModal();
+  try {
+    const res = await fetch('/api/kasa/discover');
+    const d = await res.json();
+    const list = document.getElementById('kasa-devices');
+    const entries = Object.entries(d.devices || {});
+    if (!entries.length) {
+      document.getElementById('kasa-msg').textContent = 'No Kasa devices found.';
+      return;
+    }
+    document.getElementById('kasa-msg').textContent = 'Select a plug:';
+    entries.forEach(([ip, name]) => {
+      const li = document.createElement('li');
+      li.textContent = name + ' (' + ip + ')';
+      li.onclick = async () => {
+        await fetch('/api/kasa', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ip})
+        });
+        dlg.close();
+        fetchStatus();
+      };
+      list.appendChild(li);
+    });
+  } catch(e) {
+    document.getElementById('kasa-msg').textContent = 'Error: ' + e.message;
+  }
+}
+
 async function fetchHistory() {
   const res = await fetch('/api/history');
   const d = await res.json();
   if (!d.temps.length) return;
   const times = d.timestamps.map(t => new Date(t));
-  const validTemps = d.temps.filter(t => t !== null);
-  const tMin = Math.floor(Math.min(...validTemps)) - 2;
-  const tMax = Math.ceil(Math.max(...validTemps)) + 2;
+  const keezerTemps = d.temps.filter(t => t !== null);
+  const tMin = Math.floor(Math.min(...keezerTemps, limits.lower_f)) - 1;
+  const tMax = Math.ceil(Math.max(...keezerTemps, limits.upper_f)) + 1;
 
   const traces = [{
     x: times, y: d.temps, type: 'scatter', mode: 'lines',
-    line: {color: '#4fc3f7', width: 2}, name: 'Keezer'
+    line: {color: '#1b2a4a', width: 2}, name: 'Keezer'
   }];
-  if (d.room_temps.some(t => t !== null)) {
-    traces.push({
-      x: times, y: d.room_temps, type: 'scatter', mode: 'lines',
-      line: {color: '#ffb74d', width: 1.5, dash: 'dot'}, name: 'Room'
-    });
-  }
+  traces.push({
+    x: [times[0], times[times.length-1]], y: [limits.upper_f, limits.upper_f],
+    type: 'scatter', mode: 'lines', line: {color: '#c62828', width: 1, dash: 'dash'}, name: 'High', showlegend: true
+  });
+  traces.push({
+    x: [times[0], times[times.length-1]], y: [limits.lower_f, limits.lower_f],
+    type: 'scatter', mode: 'lines', line: {color: '#0277bd', width: 1, dash: 'dash'}, name: 'Low', showlegend: true
+  });
 
   Plotly.newPlot('temp-chart', traces, {
-    title: {text: 'Temperature', font: {color: '#eee', size: 14}},
-    paper_bgcolor: '#16213e', plot_bgcolor: '#0f1a2e',
-    xaxis: {color: '#aaa', gridcolor: '#2a2a4a', tickformat: '%b %d %H:%M'},
-    yaxis: {color: '#aaa', gridcolor: '#2a2a4a', title: '°F', range: [tMin, tMax], dtick: 2},
-    legend: {font: {color: '#aaa'}, x: 0, y: 1.15, orientation: 'h'},
-    margin: {t: 30, r: 16, b: 30, l: 44}
+    title: {text: 'Temperature', font: {color: '#1b2a4a', size: 13}},
+    paper_bgcolor: '#fff', plot_bgcolor: '#f8f9fb',
+    xaxis: {color: '#555', gridcolor: '#e0e0e0', tickformat: '%H:%M',
+      range: [new Date(Date.now() - 12*60*60*1000), new Date()]},
+    yaxis: {color: '#555', gridcolor: '#e0e0e0', title: '°F', range: [tMin, tMax], dtick: 1},
+    legend: {font: {color: '#555', size: 10}, x: 0, y: 1.15, orientation: 'h'},
+    margin: {t: 28, r: 12, b: 28, l: 40}
   }, {responsive: true});
 
-  // State chart — colored bars for each state
-  const barColors = d.states.map(s => stateColors[s] || '#888');
-  Plotly.newPlot('state-chart', [{
-    x: times, y: d.states.map(() => 1), type: 'bar',
-    marker: {color: barColors, line: {width: 0}},
-    hovertext: d.states.map((s, i) => (stateLabels[s] || s) + ' — ' + times[i].toLocaleTimeString()),
-    hoverinfo: 'text'
+  // Power chart
+  Plotly.newPlot('power-chart', [{
+    x: times, y: d.watts, type: 'scatter', mode: 'lines',
+    fill: 'tozeroy', line: {color: '#0277bd', width: 1.5},
+    fillcolor: 'rgba(2,119,189,0.15)', name: 'Watts'
   }], {
-    title: {text: 'Compressor State', font: {color: '#eee', size: 14}},
-    paper_bgcolor: '#16213e', plot_bgcolor: '#0f1a2e',
-    xaxis: {color: '#aaa', gridcolor: '#2a2a4a', tickformat: '%b %d %H:%M'},
-    yaxis: {visible: false, range: [0, 1.2]},
-    bargap: 0, margin: {t: 30, r: 16, b: 30, l: 44},
-    showlegend: false
+    title: {text: 'Power Usage', font: {color: '#1b2a4a', size: 13}},
+    paper_bgcolor: '#fff', plot_bgcolor: '#f8f9fb',
+    xaxis: {color: '#555', gridcolor: '#e0e0e0', tickformat: '%H:%M',
+      range: [new Date(Date.now() - 12*60*60*1000), new Date()]},
+    yaxis: {color: '#555', gridcolor: '#e0e0e0', title: 'W'},
+    margin: {t: 28, r: 12, b: 28, l: 40}, showlegend: false
   }, {responsive: true});
+
+
 }
 
 fetchStatus();
