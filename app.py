@@ -487,6 +487,7 @@ def api_status():
         "kasa_ip": state["kasa_ip"],
         "pi_ip": state.get("pi_ip") or get_pi_ip(),
         "plug_reachable": state.get("plug_reachable", False),
+        "alerts_enabled": alert_state["alerts_enabled"],
     })
 
 @app.route("/api/target", methods=["POST"])

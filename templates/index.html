@@ -40,6 +40,8 @@
   .net-item.reachable { border-color: #2e7d32; color: #2e7d32; }
   .net-item.unreachable { border-color: #c62828; color: #c62828; }
   .net-item[onclick] { cursor: pointer; text-decoration: underline dotted; }
+  .alert-toggle.on { border-color: #2e7d32; color: #2e7d32; }
+  .alert-toggle.off { border-color: #e65100; color: #e65100; }
   .charts { flex: 1; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
   .chart { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 6px; flex: 1; min-height: 0; }
   .chart.small { flex: 0.6; }
@@ -100,6 +102,7 @@
 <div class="network-status" id="network-status">
   <span class="net-item" id="net-pi">🖥 Pi: --</span>
   <span class="net-item" id="net-plug" onclick="openKasaDialog()">🔌 Plug: --</span>
+  <span class="net-item alert-toggle" id="alert-toggle" onclick="toggleAlerts()">🔔 Alerts: --</span>
 </div>
 
 <div class="charts">
@@ -182,6 +185,16 @@ async function fetchStatus() {
     plugEl.textContent = '⚠️ Plug: not configured';
     plugEl.className = 'net-item unreachable';
   }
+
+  // Alert status
+  const alertEl = document.getElementById('alert-toggle');
+  if (d.alerts_enabled) {
+    alertEl.textContent = '🔔 Alerts: On';
+    alertEl.className = 'net-item alert-toggle on';
+  } else {
+    alertEl.textContent = '🔕 Alerts: Off';
+    alertEl.className = 'net-item alert-toggle off';
+  }
 }
 
 async function adjustLimit(key, delta) {
@@ -235,6 +248,17 @@ async function setMode(mode) {
   await fetch('/api/mode', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({mode})
+  });
+  fetchStatus();
+}
+
+async function toggleAlerts() {
+  const res = await fetch('/api/alerts');
+  const d = await res.json();
+  const newState = !d.alerts_enabled;
+  await fetch('/api/alerts', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({enabled: newState})
   });
   fetchStatus();
 }
